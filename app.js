@@ -2,14 +2,14 @@ require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
-const fs = require('fs'); // Single import for fs
+const fs = require('fs');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const { v4: uuidv4 } = require('uuid');
-const puppeteer = require('puppeteer'); // Change this to puppeteer
-const chromium = require('chrome-aws-lambda'); // Import chrome-aws-lambda
-const { spawn } = require('child_process'); // Changed from exec to spawn
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3'); // AWS SDK v3
+const puppeteer = require('puppeteer'); 
+const chromium = require('chrome-aws-lambda'); 
+const { spawn } = require('child_process');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3'); 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -30,7 +30,7 @@ if (!fs.existsSync(downloadsDir)) {
     fs.mkdirSync(downloadsDir);
 }
 
-// Initialize the S3 client with credentials from environment variables (AWS SDK v3)
+// Initialize the S3 client with credentials from environment variables
 const s3 = new S3Client({
     region: process.env.AWS_REGION || 'ap-southeast-1',
     credentials: {
@@ -78,7 +78,7 @@ async function getVideoTitle(url) {
                 ...chromium.args,
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
-                '--geo-bypass', // Add geo-bypass option
+                '--geo-bypass',
             ],
             executablePath: await chromium.executablePath,
             headless: true,
@@ -89,36 +89,23 @@ async function getVideoTitle(url) {
         // Set the user agent
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36');
 
-        // Set cookies for authentication
-        const cookies = [
-            {
-                name: 'YSC',
-                value: 'NMch3UzERTk',
-                domain: '.youtube.com',
-                path: '/',
-                httpOnly: true,
-                secure: true,
-            },
-            {
-                name: 'VISITOR_INFO1_LIVE',
-                value: 'bm71uRCtw34',
-                domain: '.youtube.com',
-                path: '/',
-                httpOnly: true,
-                secure: true,
-            },
-            {
-                name: 'LOGIN_INFO',
-                value: 'AFmmF2swRQIhALevMn5RJQqazchB1luxOiDDX4PBnuI2WMkr_k84uKfvAiBjU_rO43iKhgfgjsR831zrBULub06aeHs55hFGfkOAAA:QUQ3MjNmeDZjSGhyUy0wWFJtZnRmTXFuLXZQbzVEMnZycFlOUzIxYWpYb1N4bGNHOTBWV0FTRkY0SGMwUklwQk5OdzJKWXdXUWtZUTNDSGF0a3VrNU11N1BIelVvWlc3V2FyS3Y4TWlzZTVaYzdkbnpzXzNUMXk5enV6U1p2aXNib2x5NkV6M0QtN1FmaUpQelQ1eURrR0F3MFRZN0dJTUl3',
-                domain: '.youtube.com',
-                path: '/',
-                httpOnly: true,
-                secure: true,
-            }
-        ];
-
-        // Set cookies on the page
-        await page.setCookie(...cookies);
+        // Set cookies for YouTube
+        await page.setCookie({
+            name: 'YSC',
+            value: 'NMch3UzERTk',
+            domain: '.youtube.com',
+            path: '/',
+            httpOnly: true,
+            secure: true,
+        });
+        await page.setCookie({
+            name: 'VISITOR_INFO1_LIVE',
+            value: 'bm71uRCtw34',
+            domain: '.youtube.com',
+            path: '/',
+            httpOnly: true,
+            secure: true,
+        });
 
         await page.goto(url, { waitUntil: 'networkidle2' });
         const title = await page.title();
@@ -133,8 +120,6 @@ async function getVideoTitle(url) {
     }
 }
 
-
-
 // Sanitize file name
 function sanitizeFileName(fileName) {
     return fileName.replace(/[<>:"/\\|?*]+/g, '_').trim();
@@ -144,14 +129,14 @@ function sanitizeFileName(fileName) {
 async function uploadToS3(fileBuffer, bucketName, key) {
     const uploadParams = {
         Bucket: bucketName,
-        Key: key, // This is the name you want to give the file in S3
+        Key: key, 
         Body: fileBuffer,
     };
 
     try {
         const result = await s3.send(new PutObjectCommand(uploadParams));
         console.log('Upload Success', result);
-        return `https://${bucketName}.s3.amazonaws.com/${key}`; // Return the S3 URL
+        return `https://${bucketName}.s3.amazonaws.com/${key}`;
     } catch (error) {
         console.error('Error uploading to S3:', error);
         throw error;
@@ -159,12 +144,11 @@ async function uploadToS3(fileBuffer, bucketName, key) {
 }
 
 // Convert endpoint
-const FFMPEG_PATH = 'ffmpeg'; // Update this if necessary
+const FFMPEG_PATH = 'ffmpeg'; 
 app.post('/convert', async (req, res) => {
     const { url, format } = req.body;
     console.log('Request body:', req.body);
 
-    // Validate YouTube URL
     if (!isValidYouTubeUrl(url)) {
         return res.status(400).json({ error: 'Not a valid YouTube link' });
     }
@@ -175,7 +159,6 @@ app.post('/convert', async (req, res) => {
         const uniqueIdentifier = Date.now();
         let downloadCommand;
 
-        // Setup download command based on format
         let s3Key;
         if (format === 'audio') {
             s3Key = `${sanitizedTitle}-${uniqueIdentifier}.mp3`;
@@ -187,25 +170,21 @@ app.post('/convert', async (req, res) => {
 
         console.log('Starting download...');
 
-        // Use spawn to execute the command
         const downloadProcess = spawn(downloadCommand, {
             shell: true,
-            stdio: ['ignore', 'pipe', 'pipe'], // Ignore stdin, capture stdout and stderr
+            stdio: ['ignore', 'pipe', 'pipe'],
         });
 
         let dataBuffer = [];
 
-        // Collect data from stdout
         downloadProcess.stdout.on('data', (data) => {
             dataBuffer.push(data);
         });
 
-        // Handle errors
         downloadProcess.stderr.on('data', (data) => {
             console.error(`stderr: ${data}`);
         });
 
-        // When the process completes
         downloadProcess.on('close', async (code) => {
             if (code !== 0) {
                 console.error('Download process exited with code:', code);
@@ -213,17 +192,14 @@ app.post('/convert', async (req, res) => {
             }
 
             console.log('Download finished, uploading to S3...');
-            const fileBuffer = Buffer.concat(dataBuffer); // Combine all data chunks
+            const fileBuffer = Buffer.concat(dataBuffer); 
 
-            // Log the bucket name for debugging
             const bucketName = process.env.AWS_S3_BUCKET;
-            console.log('Using S3 Bucket:', bucketName); // Log the bucket name
+            console.log('Using S3 Bucket:', bucketName); 
 
-            // Upload to S3
             try {
                 const s3Url = await uploadToS3(fileBuffer, bucketName, s3Key);
 
-                // Return the S3 URL
                 return res.json({
                     downloadUrl: s3Url,
                     title: sanitizedTitle,
