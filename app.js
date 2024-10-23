@@ -30,19 +30,6 @@ if (!fs.existsSync(downloadsDir)) {
     fs.mkdirSync(downloadsDir);
 }
 
-// Ensure oauth_config.json file exists for storing the OAuth token
-const oauthConfigPath = path.join(__dirname, 'oauth_config.json');
-let oauthToken = null;
-
-// Load OAuth token from file if it exists
-if (fs.existsSync(oauthConfigPath)) {
-    const oauthConfig = JSON.parse(fs.readFileSync(oauthConfigPath, 'utf8'));
-    oauthToken = oauthConfig.access_token; // Use the access token directly
-}
-
-// Define cookies file path
-const cookiesFilePath = path.join(__dirname, 'cookies.txt');
-
 // Initialize the S3 client with credentials from environment variables (AWS SDK v3)
 const s3 = new S3Client({
     region: process.env.AWS_REGION || 'ap-southeast-1',
@@ -60,7 +47,7 @@ app.get('/', (req, res) => {
     if (!userCookie) {
         userId = uuidv4();
         res.cookie('user', userId, { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true });
-        fs.appendFileSync(cookiesFilePath, `Set cookie: user=${userId}\n`, 'utf8');
+        console.log(`Set cookie: user=${userId}`);
     } else {
         userId = userCookie;
         console.log(`Accessed cookie: user=${userId}`);
@@ -113,7 +100,7 @@ async function getVideoTitle(url) {
             executablePath: await chromium.executablePath,
             headless: true,
         });
-        
+
         const page = await browser.newPage();
         await page.goto(url, { waitUntil: 'networkidle2' });
         const title = await page.title();
@@ -172,10 +159,10 @@ app.post('/convert', async (req, res) => {
         let s3Key;
         if (format === 'audio') {
             s3Key = `${sanitizedTitle}-${uniqueIdentifier}.mp3`;
-            downloadCommand = `yt-dlp -x --audio-format mp3 --ffmpeg-location "${FFMPEG_PATH}" --no-check-certificate --username "oauth" --password "${oauthToken}" -o - "${url}"`; // Use - to output to stdout
+            downloadCommand = `yt-dlp -x --audio-format mp3 --ffmpeg-location "${FFMPEG_PATH}" --no-check-certificate -o - "${url}"`; // Use - to output to stdout
         } else {
             s3Key = `${sanitizedTitle}-${uniqueIdentifier}.mp4`;
-            downloadCommand = `yt-dlp -f "bestvideo+bestaudio/best" --ffmpeg-location "${FFMPEG_PATH}" --no-check-certificate --username "oauth" --password "${oauthToken}" -o - "${url}"`; // Use - to output to stdout
+            downloadCommand = `yt-dlp -f "bestvideo+bestaudio/best" --ffmpeg-location "${FFMPEG_PATH}" --no-check-certificate -o - "${url}"`; // Use - to output to stdout
         }
 
         console.log('Starting download...');
@@ -260,37 +247,9 @@ function deleteOldFiles() {
 }
 
 // Run this every hour to clean up old files
-setInterval(deleteOldFiles, 60 * 60 * 1000); // 60 minutes * 60 seconds * 1000 milliseconds
+setInterval(deleteOldFiles, 3600000);
 
-// Function to delete all objects in the S3 bucket
-async function deleteAllS3Objects() {
-    try {
-        const listParams = {
-            Bucket: process.env.AWS_S3_BUCKET,
-        };
-
-        const data = await s3.send(new ListObjectsCommand(listParams));
-
-        if (data.Contents && data.Contents.length > 0) {
-            for (const object of data.Contents) {
-                const deleteParams = {
-                    Bucket: process.env.AWS_S3_BUCKET,
-                    Key: object.Key,
-                };
-
-                await s3.send(new DeleteObjectCommand(deleteParams));
-                console.log(`Deleted object from S3: ${object.Key}`);
-            }
-        }
-    } catch (err) {
-        console.error('Error deleting objects from S3:', err);
-    }
-}
-
-// Schedule deletion of all objects in the S3 bucket every hour
-setInterval(deleteAllS3Objects, 60 * 60 * 1000); // 60 minutes * 60 seconds * 1000 milliseconds
-
-// Start the server
+// Start server
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
