@@ -5,4 +5,5 @@ node_modules
 oauth_config
 cache
 oauth_config.json
-Google
+cookies.txt
+downloads

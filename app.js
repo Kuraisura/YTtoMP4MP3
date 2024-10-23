@@ -10,6 +10,9 @@ const puppeteer = require('puppeteer');
 const chromium = require('chrome-aws-lambda'); 
 const { spawn } = require('child_process');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3'); 
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -22,6 +25,10 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(express.static('public'));
+app.use(require('express-session')({ secret: process.env.SESSION_SECRET || 'your_secret_key', resave: true, saveUninitialized: true }));
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // Ensure downloads directory exists
@@ -39,6 +46,35 @@ const s3 = new S3Client({
     }
 });
 
+// Google OAuth setup
+passport.serializeUser((user, done) => {
+    done(null, user);
+});
+
+passport.deserializeUser((user, done) => {
+    done(null, user);
+});
+
+// Configure the Google strategy for use by Passport
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_REDIRECT_URI,
+}, (accessToken, refreshToken, profile, done) => {
+    return done(null, profile);
+}));
+
+// Define route for Google authentication
+app.get('/auth/google', passport.authenticate('google', {
+    scope: [process.env.GOOGLE_OAUTH2_SCOPE]
+}));
+
+// Define the callback route
+app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/' }), (req, res) => {
+    // Successful authentication, redirect home or to another page
+    res.redirect('/');
+});
+
 // Root route
 app.get('/', (req, res) => {
     const userCookie = req.cookies.user;
@@ -53,7 +89,7 @@ app.get('/', (req, res) => {
         console.log(`Accessed cookie: user=${userId}`);
     }
 
-    res.render('index');
+    res.render('index', { user: req.user }); // Pass user info to the view
 });
 
 // Validate YouTube URL
@@ -88,24 +124,6 @@ async function getVideoTitle(url) {
 
         // Set the user agent
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36');
-
-        // Set cookies for YouTube
-        await page.setCookie({
-            name: 'YSC',
-            value: 'NMch3UzERTk',
-            domain: '.youtube.com',
-            path: '/',
-            httpOnly: true,
-            secure: true,
-        });
-        await page.setCookie({
-            name: 'VISITOR_INFO1_LIVE',
-            value: 'bm71uRCtw34',
-            domain: '.youtube.com',
-            path: '/',
-            httpOnly: true,
-            secure: true,
-        });
 
         await page.goto(url, { waitUntil: 'networkidle2' });
         const title = await page.title();
@@ -162,10 +180,10 @@ app.post('/convert', async (req, res) => {
         let s3Key;
         if (format === 'audio') {
             s3Key = `${sanitizedTitle}-${uniqueIdentifier}.mp3`;
-            downloadCommand = `yt-dlp -x --audio-format mp3 --geo-bypass --ffmpeg-location "${FFMPEG_PATH}" --no-check-certificate -o - "${url}" --user-agent "Your User Agent"`;
+            downloadCommand = `yt-dlp -x --audio-format mp3 --geo-bypass --ffmpeg-location "${FFMPEG_PATH}" --no-check-certificate -o - "${url}" --user-agent "Mozilla/5.0"`;
         } else {
             s3Key = `${sanitizedTitle}-${uniqueIdentifier}.mp4`;
-            downloadCommand = `yt-dlp -f "bestvideo+bestaudio/best" --geo-bypass --ffmpeg-location "${FFMPEG_PATH}" --no-check-certificate -o - "${url}" --user-agent "Your User Agent"`;
+            downloadCommand = `yt-dlp -f "bestvideo+bestaudio/best" --geo-bypass --ffmpeg-location "${FFMPEG_PATH}" --no-check-certificate -o - "${url}" --user-agent "Mozilla/5.0"`;
         }
 
         console.log('Starting download...');
@@ -211,41 +229,11 @@ app.post('/convert', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Error while fetching video title or processing:', error);
-        res.status(500).json({ error: 'Could not fetch video' });
+        console.error('Error while fetching video title or processing download:', error);
+        return res.status(500).json({ error: 'Server error' });
     }
 });
 
-// Serve downloads
-app.use('/downloads', express.static(downloadsDir));
-
-// Function to delete old video files
-function deleteOldFiles() {
-    fs.readdir(downloadsDir, (err, files) => {
-        if (err) {
-            console.error('Error reading downloads directory:', err);
-            return;
-        }
-
-        files.forEach(file => {
-            const filePath = path.join(downloadsDir, file);
-            if (file.endsWith('.mp4') || file.endsWith('.mp3')) {
-                fs.unlink(filePath, (err) => {
-                    if (err) {
-                        console.error(`Error deleting file: ${file}`, err);
-                    } else {
-                        console.log(`Deleted file: ${file}`);
-                    }
-                });
-            }
-        });
-    });
-}
-
-// Run this every hour to clean up old files
-setInterval(deleteOldFiles, 3600000);
-
-// Start server
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
