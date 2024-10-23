@@ -85,7 +85,41 @@ async function getVideoTitle(url) {
         });
 
         const page = await browser.newPage();
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36'); // Set the user agent
+
+        // Set the user agent
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36');
+
+        // Set cookies for authentication
+        const cookies = [
+            {
+                name: 'YSC',
+                value: 'NMch3UzERTk',
+                domain: '.youtube.com',
+                path: '/',
+                httpOnly: true,
+                secure: true,
+            },
+            {
+                name: 'VISITOR_INFO1_LIVE',
+                value: 'bm71uRCtw34',
+                domain: '.youtube.com',
+                path: '/',
+                httpOnly: true,
+                secure: true,
+            },
+            {
+                name: 'LOGIN_INFO',
+                value: 'AFmmF2swRQIhALevMn5RJQqazchB1luxOiDDX4PBnuI2WMkr_k84uKfvAiBjU_rO43iKhgfgjsR831zrBULub06aeHs55hFGfkOAAA:QUQ3MjNmeDZjSGhyUy0wWFJtZnRmTXFuLXZQbzVEMnZycFlOUzIxYWpYb1N4bGNHOTBWV0FTRkY0SGMwUklwQk5OdzJKWXdXUWtZUTNDSGF0a3VrNU11N1BIelVvWlc3V2FyS3Y4TWlzZTVaYzdkbnpzXzNUMXk5enV6U1p2aXNib2x5NkV6M0QtN1FmaUpQelQ1eURrR0F3MFRZN0dJTUl3',
+                domain: '.youtube.com',
+                path: '/',
+                httpOnly: true,
+                secure: true,
+            }
+        ];
+
+        // Set cookies on the page
+        await page.setCookie(...cookies);
+
         await page.goto(url, { waitUntil: 'networkidle2' });
         const title = await page.title();
         return title;
@@ -98,6 +132,7 @@ async function getVideoTitle(url) {
         }
     }
 }
+
 
 
 // Sanitize file name
