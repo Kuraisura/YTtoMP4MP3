@@ -17,7 +17,6 @@ const PORT = process.env.PORT || 3000;
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
@@ -70,7 +69,6 @@ app.get('/', (req, res) => {
     res.render('index');
 });
 
-
 // Endpoint to read the cookie
 app.get('/get-cookie', (req, res) => {
     const userCookie = req.cookies.user;
@@ -102,7 +100,6 @@ function getVideoId(url) {
     return match ? match[1] : null;
 }
 
-
 async function getVideoTitle(url) {
     let browser = null;
     try {
@@ -130,7 +127,6 @@ async function getVideoTitle(url) {
         }
     }
 }
-
 
 // Sanitize file name
 function sanitizeFileName(fileName) {
@@ -237,8 +233,6 @@ app.post('/convert', async (req, res) => {
     }
 });
 
-
-
 // Serve downloads
 app.use('/downloads', express.static(downloadsDir));
 
@@ -252,12 +246,12 @@ function deleteOldFiles() {
 
         files.forEach(file => {
             const filePath = path.join(downloadsDir, file);
-            if (file.endsWith('.mp3') || file.endsWith('.mp4')) {
+            if (file.endsWith('.mp4') || file.endsWith('.mp3')) {
                 fs.unlink(filePath, (err) => {
                     if (err) {
-                        console.error(`Error deleting file ${filePath}:`, err);
+                        console.error(`Error deleting file: ${file}`, err);
                     } else {
-                        console.log(`Deleted file: ${filePath}`);
+                        console.log(`Deleted file: ${file}`);
                     }
                 });
             }
@@ -265,39 +259,38 @@ function deleteOldFiles() {
     });
 }
 
+// Run this every hour to clean up old files
+setInterval(deleteOldFiles, 60 * 60 * 1000); // 60 minutes * 60 seconds * 1000 milliseconds
+
 // Function to delete all objects in the S3 bucket
 async function deleteAllS3Objects() {
-    const bucketName = process.env.AWS_S3_BUCKET;
-    console.log('Deleting all objects in S3 bucket:', bucketName);
-
     try {
-        const listCommand = new ListObjectsCommand({ Bucket: bucketName });
-        const { Contents } = await s3.send(listCommand);
+        const listParams = {
+            Bucket: process.env.AWS_S3_BUCKET,
+        };
 
-        if (Contents.length > 0) {
-            const deletePromises = Contents.map(async (object) => {
-                const deleteCommand = new DeleteObjectCommand({
-                    Bucket: bucketName,
+        const data = await s3.send(new ListObjectsCommand(listParams));
+
+        if (data.Contents && data.Contents.length > 0) {
+            for (const object of data.Contents) {
+                const deleteParams = {
+                    Bucket: process.env.AWS_S3_BUCKET,
                     Key: object.Key,
-                });
-                await s3.send(deleteCommand);
-                console.log(`Deleted S3 object: ${object.Key}`);
-            });
+                };
 
-            await Promise.all(deletePromises);
-        } else {
-            console.log('No objects found in S3 bucket.');
+                await s3.send(new DeleteObjectCommand(deleteParams));
+                console.log(`Deleted object from S3: ${object.Key}`);
+            }
         }
-    } catch (error) {
-        console.error('Error deleting S3 objects:', error);
+    } catch (err) {
+        console.error('Error deleting objects from S3:', err);
     }
 }
 
-// Schedule the S3 delete operation every hour
+// Schedule deletion of all objects in the S3 bucket every hour
 setInterval(deleteAllS3Objects, 60 * 60 * 1000); // 60 minutes * 60 seconds * 1000 milliseconds
 
 // Start the server
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    deleteOldFiles(); // Optionally call this on startup to clean up
+    console.log(`Server is running on port ${PORT}`);
 });
