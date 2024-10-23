@@ -1,0 +1,344 @@
+/* General Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none; /* Prevent text selection */
+}
+
+body {
+    font-family: 'Lato', sans-serif;
+    background: linear-gradient(to bottom, rgba(244, 244, 244, 0.9), rgba(232, 232, 232, 0.9));
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    animation: fadeIn 1s ease-in; /* Fade in effect for the body */
+}
+
+/* Keyframe Animation for Fade In */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Header Styles */
+header {
+    background: linear-gradient(45deg, #FF8800, #FFB26F);
+    padding: 20px;
+    text-align: center;
+}
+
+header .logo h1 {
+    color: #fff;
+    font-size: 2.5em;
+}
+
+/* Main Styles */
+main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    margin: 40px;
+}
+
+.container-section {
+    margin-bottom: 40px; /* Space between container section and format selection */
+    width: 100%; /* Full width */
+    display: flex;
+    flex-direction: column; /* Stack items vertically */
+    align-items: center; /* Center align items */
+}
+
+.container {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 100%;
+    max-width: 500px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+}
+
+.container:hover {
+    transform: scale(1.03);
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.15);
+}
+
+.container h2 {
+    margin-bottom: 20px;
+    font-size: 1.8em;
+    color: #FF8800;
+}
+
+.container p {
+    margin-bottom: 20px;
+}
+
+.description {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    margin-top: 20px; /* Space above the description */
+    text-align: center; /* Center align the description text */
+    width: 100%;
+    max-width: 500px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+}
+
+.container:hover,
+.description:hover {
+    transform: scale(1.03);
+    box-shadow: 0 6px 30px rgba(0, 0, 0, 0.15);
+}
+
+.container h2 {
+    margin-bottom: 20px;
+    font-size: 1.8em;
+    color: #FF8800;
+}
+
+.container p {
+    margin-bottom: 20px;
+}
+
+form input[type="text"] {
+    width: 100%;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    font-size: 1em;
+    transition: border-color 0.3s, transform 0.3s;
+}
+
+form input[type="text"]:focus {
+    border-color: #FF8800;
+    outline: none;
+    transform: scale(1.02);
+}
+
+form input[type="text"]:hover {
+    border-color: #FF8800;
+    transform: scale(1.02);
+}
+
+form input[type="submit"] {
+    background: linear-gradient(45deg, #FF8800, #FFB26F);
+    color: white;
+    padding: 15px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.3s;
+    width: 100%;
+}
+
+form input[type="submit"]:hover {
+    background: linear-gradient(45deg, #FF7700, #FFA16F);
+    transform: scale(1.05);
+}
+
+#downloadLink {
+    margin-top: 20px;
+}
+
+.download-btn {
+    display: inline-block;
+    padding: 12px 25px;
+    background: linear-gradient(45deg, #4caf50, #45a049);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, transform 0.3s;
+}
+
+.download-btn:hover {
+    background: linear-gradient(45deg, #45a049, #388E3C);
+    transform: scale(1.05);
+}
+
+.social-links {
+    margin-top: 20px;
+}
+
+.social-links p {
+    margin-bottom: 10px;
+}
+
+.social-icons {
+    display: flex;
+    gap: 15px; /* Adjust the spacing between icons */
+}
+
+.social-icon {
+    display: inline-block;
+    transition: transform 0.3s ease; /* Smooth scaling animation */
+}
+
+.social-icon img {
+    width: 40px; /* Adjust icon size */
+    height: auto; /* Maintain aspect ratio */
+    transition: filter 0.3s ease; /* Smooth color change effect */
+}
+
+.social-icon:hover {
+    transform: scale(1.1); /* Scale effect on hover */
+}
+
+.social-icon.facebook:hover img {
+    filter: brightness(0) saturate(100%) invert(33%) sepia(97%) saturate(3491%) hue-rotate(192deg) brightness(94%) contrast(96%);
+}
+
+.social-icon.twitter:hover img {
+    filter: brightness(0) saturate(100%) invert(33%) sepia(89%) saturate(2976%) hue-rotate(181deg) brightness(97%) contrast(94%);
+}
+
+.social-icon.whatsapp:hover img {
+    filter: brightness(0) saturate(100%) invert(55%) sepia(73%) saturate(2939%) hue-rotate(134deg) brightness(87%) contrast(94%);
+}
+
+.social-icon {
+    margin: 0 10px;
+    color: #FF8800;
+    font-size: 1.5em;
+    transition: color 0.3s, transform 0.3s;
+}
+
+.social-icon:hover {
+    color: #e55b00;
+    transform: scale(1.1); /* Add hover effect for social icons */
+}
+
+footer {
+    text-align: center;
+    margin-top: 30px;
+    padding: 20px;
+    background: linear-gradient(45deg, #FF8800, #FFB26F);
+    color: #fff;
+    font-size: 0.9em;
+}
+
+footer a {
+    color: #fff; /* Make the link color white */
+    text-decoration: underline; /* Underline the link */
+    transition: transform 0.3s, color 0.3s; /* Add transition for smooth effect */
+}
+
+footer a:hover {
+    transform: scale(1.1); /* Scale up the link on hover */
+    color: #ffe600; /* Change the color on hover */
+}
+
+.separator {
+    border: none; /* Remove the default border */
+    height: 1px; /* Set the height of the line */
+    background: linear-gradient(45deg, #FF8800, #FFB26F); /* Set the color of the line */
+    margin: 10px 0; /* Add vertical spacing */
+    width: 80%; /* Set the width of the line */
+    align-self: center; /* Center the line */
+}
+
+.format-selection {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+/* Format Selection Styles */
+.format-selection {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px; /* Space above the format selection */
+}
+
+/* Format Button Styles */
+.format-button {
+    padding: 15px 30px;
+    border: none;
+    border-radius: 5px;
+    margin: 0 10px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background 0.3s, transform 0.3s;
+    width: 150px; /* Set a fixed width for buttons */
+    background: linear-gradient(45deg, #FF8800, #FFB26F); /* Gradient background */
+}
+
+.format-button:hover {
+    transform: scale(1.05); /* Slightly enlarge the button on hover */
+    background: linear-gradient(45deg, #FF7700, #FFA16F); /* Change gradient on hover */
+}
+
+.format-button:active {
+    transform: scale(0.95); /* Slightly shrink the button on click */
+}
+
+.loading-percentage {
+    margin-top: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    color: #FF8800;
+}
+
+/* MP3 Button Styles */
+.mp3-button {
+    background: linear-gradient(45deg, #4caf50, #45a049);
+    color: white;
+}
+
+.mp3-button:hover {
+    background: linear-gradient(45deg, #45a049, #388E3C);
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0, 76, 153, 0.3); /* Add shadow effect */
+}
+
+/* MP4 Button Styles */
+.mp4-button {
+    background: linear-gradient(45deg, #2196F3, #1976D2);
+    color: white;
+}
+
+.mp4-button:hover {
+    background: linear-gradient(45deg, #1976D2, #0D47A1);
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(0, 76, 153, 0.3); /* Add shadow effect */
+}
+
+/* Selected Button Styles */
+.selected {
+    outline: 2px solid #FF8800; /* Highlight selected button */
+}
+
+.video-thumbnail {
+    width: 100%; /* or set a fixed width, e.g., 300px */
+    height: auto; /* This maintains the aspect ratio */
+    max-width: 600px; /* Set a max-width for larger screens */
+    display: block; /* Ensure the image is a block element */
+    margin: 0 auto; /* Center the thumbnail if needed */
+}
+
+
+.loading-bar {
+    width: 0;
+    height: 5px; /* Height of the loading bar */
+    background-color: #4CAF50; /* Green color */
+    transition: width 0.4s; /* Smooth transition */
+    margin-top: 10px; /* Space above the loading bar */
+}
+
+.hidden {
+    display: none; /* Hide elements with this class */
+}

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube to MP4/MP3</title>
+    <!-- <link rel="icon" type="image/x-icon" href="favicon.ico?v="+ Math.trunc(Math.random()*999)> -->
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+    <header>
+        <div class="logo">
+            <h1>
+                <a href="/" style="text-decoration: none; color: inherit;">
+                    <i class="fas fa-music"></i> YouTube to MP4/MP3
+                </a>
+            </h1>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <h2><i class="fas fa-video"></i> Convert YouTube Videos to MP3 or MP4!</h2>
+            <p>Paste your YouTube link below and select the format to convert.</p>
+            <form id="converterForm">
+                <input type="text" id="youtubeUrl" placeholder="Enter YouTube URL" required>
+                <div class="format-selection">
+                    <button type="button" class="format-button mp3-button selected" id="mp3Button" data-format="audio">MP3 (Audio)</button>
+                    <button type="button" class="format-button mp4-button" id="mp4Button" data-format="video">MP4 (Video)</button>
+                </div>
+                <input type="submit" value="Convert">
+            </form>
+            <div id="loadingMessage" class="loading-message hidden"></div>
+            <div class="loading-bar hidden" id="loadingBar"></div>
+            <!-- Add this for the percentage display -->
+            <div class="loading-percentage hidden" id="loadingPercentage">0%</div>
+            <div id="downloadLink"></div>
+            <img id="thumbnail" src="" alt="Video Thumbnail" class="video-thumbnail" style="display:none; margin-top: 20px;" />
+            <div id="videoTitle" class="video-title"></div>
+            <div class="social-links">
+                <p>Share with your friends:</p>
+                <a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fexample.com" class="social-icon" id="facebookShare" target="_blank"><i class="fab fa-facebook-f"></i></a>
+                <a href="https://twitter.com/intent/tweet?text=Check%20this%20out!&url=https%3A%2F%2Fexample.com" class="social-icon" id="twitterShare" target="_blank"><i class="fab fa-twitter"></i></a>
+                <a href="https://api.whatsapp.com/send?text=Check%20this%20out!%20https%3A%2F%2Fexample.com" class="social-icon" id="whatsappShare" target="_blank"><i class="fab fa-whatsapp"></i></a>
+                <a href="https://www.instagram.com" class="social-icon" id="instagramShare" target="_blank"><i class="fab fa-instagram"></i></a>
+            </div>   
+        </div>
+
+        <div class="description">
+            <h3>YouTube to MP4/MP3 Converter</h3>
+            <p>Easily convert YouTube videos to MP3 (audio) or MP4 (video) for free! No app installation is required—use it on any device, anytime.</p>
+            <h4>How to Download YouTube Videos:</h4>
+            <p><strong>Find Your Video:</strong> Go to YouTube, search for the video, and copy its URL.</p>
+            <p><strong>Paste the URL:</strong> Visit my converter, paste the link, and choose your format (MP3 or MP4). If you don’t select, MP3 is the default.</p>
+            <p><strong>Convert & Download:</strong> Click "Convert." After a few moments, download your file from the provided link.</p>
+        </div>
+    </main>
+
+    <hr class="separator">
+
+    <footer>
+        <p>&copy; 2024 YouTube to MP4/MP3 Converter. | All Rights Reserved. | <a href="https://www.youtube.com/@kuraisler" target="_blank">Subscribe to my YouTube Channel!</a></p>
+    </footer>
+
+    <script>
+        // Prevent certain keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'F12' || (event.ctrlKey && event.shiftKey && event.key === 'I')) {
+                event.preventDefault();
+            }
+        });
+    
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.key === 'u') {
+                event.preventDefault();
+            }
+        });
+    
+        // Click tracking
+        let clickCount = 0; // Counter for clicks
+        const maxClicks = 3; // Max clicks allowed within the timeframe
+        const timeFrame = 5000; // Time frame in milliseconds
+        let isCooldown = false; // Cooldown flag
+    
+        // Form submission handling
+        document.getElementById('converterForm').onsubmit = async function(event) {
+            event.preventDefault();
+    
+            if (isCooldown) {
+                alert("Chill ka lang, dahan dahan lang (Refresh mo nalang)");
+                return; // Exit if cooldown is active
+            }
+    
+            clickCount++; // Increment click counter
+    
+            // Check if clicks exceed the limit
+            if (clickCount > maxClicks) {
+                isCooldown = true; // Set cooldown
+                alert("Chill ka lang, dahan dahan lang (Refresh mo nalang)"); // Show warning message
+                setTimeout(() => {
+                    isCooldown = false; // Reset cooldown after the time frame
+                    clickCount = 0; // Reset click counter
+                }, timeFrame);
+                return; // Exit to prevent form submission
+            }
+    
+            const youtubeUrl = document.getElementById('youtubeUrl').value;
+            const format = document.querySelector('.format-button.selected').dataset.format;
+    
+            // YouTube URL validation
+            const youtubeUrlPattern = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
+            if (!youtubeUrlPattern.test(youtubeUrl)) {
+                alert("Invalid YouTube link"); // Alert for invalid URL
+                return; // Exit if the URL is invalid
+            }
+    
+            // Disable the convert button to prevent multiple clicks
+            const convertButton = event.submitter; // This gets the submit button that was clicked
+            convertButton.disabled = true; // Disable the button
+    
+            const videoId = youtubeUrl.split('v=')[1]?.split('&')[0] || '';
+const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+
+// Set the thumbnail source and error handling
+const thumbnailElement = document.getElementById('thumbnail');
+thumbnailElement.src = thumbnailUrl;
+
+// Handle thumbnail loading error
+thumbnailElement.onerror = function() {
+    // Fallback image if the thumbnail fails to load
+    thumbnailElement.src = 'path/to/your/default-thumbnail.jpg'; // Provide a path to a default image
+};
+
+const videoTitleElement = document.getElementById('videoTitle');
+
+// Hide the current thumbnail and title while converting
+thumbnailElement.style.display = 'none';
+videoTitleElement.innerText = '';
+
+    
+            const loadingMessageElement = document.getElementById('loadingMessage');
+            loadingMessageElement.classList.remove('hidden');
+            loadingMessageElement.innerText = 'Preparing Conversion...';
+    
+            const loadingBar = document.getElementById('loadingBar');
+            const loadingPercentageElement = document.getElementById('loadingPercentage');
+            loadingBar.classList.remove('hidden'); // Show the loading bar
+            loadingPercentageElement.classList.remove('hidden'); // Show the percentage
+            loadingBar.style.width = '0%'; // Reset the loading bar
+            loadingPercentageElement.innerText = '0%'; // Reset percentage text
+    
+            // Simulate loading progress
+            let progress = 0;
+            const interval = setInterval(() => {
+                if (progress < 90) {
+                    progress += 10; // Increase the progress
+                    loadingBar.style.width = `${progress}%`; // Update the loading bar width
+                    loadingPercentageElement.innerText = `${progress}%`; // Update the percentage text
+                }
+            }, 300); // Update every 300ms
+    
+            // Clear previous download links and reset visibility
+            document.getElementById('downloadLink').innerHTML = '';
+            const downloadBtns = document.querySelectorAll('.download-btn');
+            downloadBtns.forEach(btn => btn.style.display = 'none'); // Hide download buttons
+    
+            try {
+                const response = await fetch('/convert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: youtubeUrl, format })
+                });
+    
+                // Check if the response is okay
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+    
+                const result = await response.json();
+                clearInterval(interval); // Stop the loading progress simulation
+                loadingBar.style.width = '100%'; // Fill the loading bar when done
+                loadingPercentageElement.innerText = '100%'; // Show 100% when complete
+    
+                // Delay to show the full loading bar before resetting it
+                setTimeout(() => {
+                    loadingBar.style.width = '0%'; // Reset loading bar
+                    loadingBar.classList.add('hidden'); // Hide loading bar
+                    loadingPercentageElement.classList.add('hidden'); // Hide percentage
+                    loadingMessageElement.innerText = ''; // Clear loading message
+                }, 1000); // 1-second delay
+    
+                // Clear previous download links
+                document.getElementById('downloadLink').innerHTML = '';
+    
+                // Check if the result contains the necessary properties
+                if (result.downloadUrl && result.title) {
+                    const downloadBtn = document.createElement('a');
+                    downloadBtn.classList.add('download-btn');
+                    downloadBtn.href = result.downloadUrl;
+                    downloadBtn.download = '';
+                    downloadBtn.innerText = `Download ${format === 'audio' ? 'MP3' : 'MP4'}`;
+                    downloadBtn.style.display = 'block'; // Ensure button is visible
+    
+                    document.getElementById('downloadLink').appendChild(downloadBtn);
+    
+                    // Display the thumbnail and title when conversion is done
+                    thumbnailElement.src = thumbnailUrl;
+                    thumbnailElement.style.display = 'block'; // Show thumbnail
+                    videoTitleElement.innerText = `Title: ${result.title}`; // Show video title
+                } else {
+                    loadingMessageElement.innerText = 'Error converting video. Please try again later.';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                loadingMessageElement.innerText = 'Error during conversion. Please try again.';
+            } finally {
+                // Re-enable the button after conversion is complete (regardless of success or error)
+                convertButton.disabled = false; // Enable the button
+            }
+        };
+    
+        // Handle format button clicks
+        document.querySelectorAll('.format-button').forEach(button => {
+            button.addEventListener('click', function() {
+                // Clear the selected class from all buttons
+                document.querySelectorAll('.format-button').forEach(btn => btn.classList.remove('selected'));
+    
+                // Add the selected class to the clicked button
+                this.classList.add('selected');
+            });
+        });
+    
+        // Share video URL to social media
+        function updateShareLinks(videoUrl, videoTitle) {
+            const facebookShare = document.getElementById('facebookShare');
+            const twitterShare = document.getElementById('twitterShare');
+            const whatsappShare = document.getElementById('whatsappShare');
+            const instagramShare = document.getElementById('instagramShare'); // Make sure this element exists
+    
+            const shareText = encodeURIComponent(`Check out this video: ${videoTitle}`);
+            const shareUrl = encodeURIComponent(videoUrl);
+    
+            facebookShare.href = `https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`;
+            twitterShare.href = `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`;
+            whatsappShare.href = `https://api.whatsapp.com/send?text=${shareText} ${shareUrl}`;
+    
+            // Note: Instagram sharing is not supported in the same way
+            instagramShare.href = `https://www.instagram.com/`;
+        }
+    </script>    
+</body>
+</html>

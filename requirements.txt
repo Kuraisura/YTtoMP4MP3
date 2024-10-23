@@ -1,0 +1,4 @@
+yt-dlp>=2023.10.20
+Flask>=2.3.3
+requests>=2.31.0
+python-dotenv>=1.0.0
