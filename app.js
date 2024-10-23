@@ -12,6 +12,18 @@ const { spawn } = require('child_process');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3'); 
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const crypto = require('crypto');
+
+// Check for SESSION_SECRET in the .env file
+if (!process.env.SESSION_SECRET) {
+    const sessionSecret = crypto.randomBytes(32).toString('hex');
+    console.log(`Generated SESSION_SECRET: ${sessionSecret}`);
+
+    // Append the SESSION_SECRET to the .env file
+    fs.appendFileSync('.env', `\nSESSION_SECRET=${sessionSecret}`, { flag: 'a' });
+} else {
+    console.log(`Using existing SESSION_SECRET: ${process.env.SESSION_SECRET}`);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,7 +37,7 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(cookieParser());
 app.use(express.static('public'));
-app.use(require('express-session')({ secret: process.env.SESSION_SECRET || 'your_secret_key', resave: true, saveUninitialized: true }));
+app.use(require('express-session')({ secret: process.env.SESSION_SECRET, resave: true, saveUninitialized: true }));
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -178,12 +190,13 @@ app.post('/convert', async (req, res) => {
         let downloadCommand;
 
         let s3Key;
+        const cookiePath = path.join(__dirname, 'cookies.txt'); // Path to your cookies file
         if (format === 'audio') {
             s3Key = `${sanitizedTitle}-${uniqueIdentifier}.mp3`;
-            downloadCommand = `yt-dlp -x --audio-format mp3 --geo-bypass --ffmpeg-location "${FFMPEG_PATH}" --no-check-certificate -o - "${url}" --user-agent "Mozilla/5.0"`;
+            downloadCommand = `yt-dlp -x --audio-format mp3 --geo-bypass --ffmpeg-location "${FFMPEG_PATH}" --cookies "${cookiePath}" --no-check-certificate -o - "${url}" --user-agent "Mozilla/5.0"`;
         } else {
             s3Key = `${sanitizedTitle}-${uniqueIdentifier}.mp4`;
-            downloadCommand = `yt-dlp -f "bestvideo+bestaudio/best" --geo-bypass --ffmpeg-location "${FFMPEG_PATH}" --no-check-certificate -o - "${url}" --user-agent "Mozilla/5.0"`;
+            downloadCommand = `yt-dlp -f "bestvideo+bestaudio/best" --geo-bypass --ffmpeg-location "${FFMPEG_PATH}" --cookies "${cookiePath}" --no-check-certificate -o - "${url}" --user-agent "Mozilla/5.0"`;
         }
 
         console.log('Starting download...');
