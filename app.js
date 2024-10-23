@@ -9,7 +9,7 @@ const { v4: uuidv4 } = require('uuid');
 const puppeteer = require('puppeteer'); // Change this to puppeteer
 const chromium = require('chrome-aws-lambda'); // Import chrome-aws-lambda
 const { spawn } = require('child_process'); // Changed from exec to spawn
-const { S3Client, PutObjectCommand, ListObjectsCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3'); // AWS SDK v3
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3'); // AWS SDK v3
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -56,24 +56,6 @@ app.get('/', (req, res) => {
     res.render('index');
 });
 
-// Endpoint to read the cookie
-app.get('/get-cookie', (req, res) => {
-    const userCookie = req.cookies.user;
-    if (userCookie) {
-        console.log(`Accessed cookie: user=${userCookie}`);
-        res.send(`User cookie value: ${userCookie}`);
-    } else {
-        res.send('No user cookie found.');
-    }
-});
-
-// Endpoint to delete the cookie
-app.get('/delete-cookie', (req, res) => {
-    res.clearCookie('user');
-    console.log('Deleted cookie: user');
-    res.send('User cookie has been deleted.');
-});
-
 // Validate YouTube URL
 function isValidYouTubeUrl(url) {
     const regex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/;
@@ -95,13 +77,15 @@ async function getVideoTitle(url) {
             args: [
                 ...chromium.args,
                 '--no-sandbox',
-                '--disable-setuid-sandbox'
+                '--disable-setuid-sandbox',
+                '--geo-bypass', // Add geo-bypass option
             ],
             executablePath: await chromium.executablePath,
             headless: true,
         });
 
         const page = await browser.newPage();
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36'); // Set the user agent
         await page.goto(url, { waitUntil: 'networkidle2' });
         const title = await page.title();
         return title;
@@ -114,6 +98,7 @@ async function getVideoTitle(url) {
         }
     }
 }
+
 
 // Sanitize file name
 function sanitizeFileName(fileName) {
@@ -159,10 +144,10 @@ app.post('/convert', async (req, res) => {
         let s3Key;
         if (format === 'audio') {
             s3Key = `${sanitizedTitle}-${uniqueIdentifier}.mp3`;
-            downloadCommand = `yt-dlp -x --audio-format mp3 --ffmpeg-location "${FFMPEG_PATH}" --no-check-certificate -o - "${url}"`; // Use - to output to stdout
+            downloadCommand = `yt-dlp -x --audio-format mp3 --geo-bypass --ffmpeg-location "${FFMPEG_PATH}" --no-check-certificate -o - "${url}" --user-agent "Your User Agent"`;
         } else {
             s3Key = `${sanitizedTitle}-${uniqueIdentifier}.mp4`;
-            downloadCommand = `yt-dlp -f "bestvideo+bestaudio/best" --ffmpeg-location "${FFMPEG_PATH}" --no-check-certificate -o - "${url}"`; // Use - to output to stdout
+            downloadCommand = `yt-dlp -f "bestvideo+bestaudio/best" --geo-bypass --ffmpeg-location "${FFMPEG_PATH}" --no-check-certificate -o - "${url}" --user-agent "Your User Agent"`;
         }
 
         console.log('Starting download...');
